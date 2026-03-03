@@ -78,7 +78,7 @@ This script updates the system weekly and performs common cleanup tasks.
 ```bash
 #!/bin/bash
 apt update
-apt upgrade -y
+apt full-upgrade -y
 apt autoremove -y
 apt autoclean -y
 ```
