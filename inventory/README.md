@@ -38,7 +38,7 @@ IP Addresses:
 ## Installation
 
 ```bash
-sudo curl -fsSL \
+sudo curl -4 -fsSL \
   https://raw.githubusercontent.com/Kraethor/Pi_Updates/main/inventory/pi-inventory.sh \
   -o /usr/local/bin/pi-inventory.sh
 
