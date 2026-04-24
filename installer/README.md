@@ -71,6 +71,12 @@ Basic install:
 ./install-to-pis.sh hosts.txt
 ```
 
+Remote install:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Kraethor/Pi_Updates/main/installer/install-to-pis.sh | bash -s -- hosts.txt
+```
+
 ---
 
 ## Options
