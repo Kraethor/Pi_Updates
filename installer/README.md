@@ -49,10 +49,10 @@ Example:
 
 ```text
 # Raspberry Pi hosts
-pi01
-pi02
-pi@pi03
-192.168.169.104
+pi-01
+pi-02
+pi@pi-03
+192.168.0.104
 ```
 
 Rules:
