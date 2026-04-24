@@ -1,4 +1,8 @@
 # Weekly system patching
 # Runs every Friday at 03:15 AM
 
-15 3 * * 5 root  /usr/local/bin/patch-system.sh >> /var/log/patch-system.log 2>&1
+# Ensure consistent environment
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+15 3 * * 5 root /usr/local/bin/patch-system.sh >> /var/log/patch-system.log 2>&1
