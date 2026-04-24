@@ -121,6 +121,10 @@ while IFS= read -r host || [[ -n "$host" ]]; do
     if ssh "$host" "RAW_BASE='$RAW_BASE' INSTALL_IPV4='$INSTALL_IPV4' RUN_NOW='$RUN_NOW' bash -s" << 'EOF'
 set -Eeuo pipefail
 
+# Ensure predictable command lookup in non-interactive SSH sessions.
+# Some systems omit /usr/sbin and /sbin from PATH, which can hide tools such as logrotate.
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
 # Download a repository file from GitHub and install it with the requested mode.
 #
 # Arguments:
