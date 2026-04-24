@@ -41,6 +41,12 @@ BRANCH="main"
 # The branch is appended later so --branch can override main.
 REPO_RAW_BASE="https://raw.githubusercontent.com/Kraethor/Pi_Updates"
 
+# Track deployment results across all hosts.
+# The installer continues after a host failure, then exits non-zero at the end
+# if any host failed.
+SUCCESS_HOSTS=()
+FAILED_HOSTS=()
+
 # Print command usage.
 usage() {
     echo "Usage: $0 [--run-now] [--install-ipv4-workaround] [--branch BRANCH] hosts.txt"
@@ -108,7 +114,11 @@ while IFS= read -r host || [[ -n "$host" ]]; do
 
     # Run the remote install block on the target host.
     # Variables are passed into the remote shell environment before bash starts.
-    ssh "$host" "RAW_BASE='$RAW_BASE' INSTALL_IPV4='$INSTALL_IPV4' RUN_NOW='$RUN_NOW' bash -s" << 'EOF'
+    #
+    # This SSH command is intentionally inside an if statement so set -e does
+    # not stop the entire installer when one host fails. Failed hosts are
+    # recorded and the installer continues with the next host.
+    if ssh "$host" "RAW_BASE='$RAW_BASE' INSTALL_IPV4='$INSTALL_IPV4' RUN_NOW='$RUN_NOW' bash -s" << 'EOF'
 set -Eeuo pipefail
 
 # Download a repository file from GitHub and install it with the requested mode.
@@ -127,6 +137,7 @@ install_file() {
     tmp="$(mktemp)"
 
     # curl options:
+    #   -4 force IPv4 because some lab systems have incomplete IPv6 connectivity
     #   -f fail on HTTP errors
     #   -s silent mode
     #   -S show errors even when silent
@@ -175,8 +186,35 @@ if [[ "$RUN_NOW" == "true" ]]; then
     sudo /usr/local/bin/patch-system.sh
 fi
 EOF
+    then
+        SUCCESS_HOSTS+=("$host")
+        echo "===== Completed $host ====="
+    else
+        FAILED_HOSTS+=("$host")
+        echo "===== FAILED $host ====="
+    fi
 
-    echo "===== Completed $host ====="
 done < "$HOST_FILE"
 
-echo "All hosts processed."
+echo
+
+echo "Deployment summary:"
+echo "  Successful hosts: ${#SUCCESS_HOSTS[@]}"
+for host in "${SUCCESS_HOSTS[@]}"; do
+    echo "    [OK]   $host"
+done
+
+echo "  Failed hosts: ${#FAILED_HOSTS[@]}"
+for host in "${FAILED_HOSTS[@]}"; do
+    echo "    [FAIL] $host"
+done
+
+if [[ ${#FAILED_HOSTS[@]} -gt 0 ]]; then
+    echo
+    echo "One or more hosts failed. Review the errors above."
+    exit 1
+fi
+
+echo
+
+echo "All hosts processed successfully."
