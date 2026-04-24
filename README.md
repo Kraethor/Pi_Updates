@@ -77,10 +77,23 @@ This script updates the system weekly and performs common cleanup tasks.
 
 ```bash
 #!/bin/bash
-apt update
-apt full-upgrade -y
-apt autoremove -y
-apt autoclean -y
+set -o pipefail
+
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export DEBIAN_FRONTEND=noninteractive
+
+echo "===== $(date '+%Y-%m-%d %H:%M:%S %Z') START patch-system ====="
+
+apt-get update
+apt-get full-upgrade -y
+apt-get autoremove -y
+apt-get autoclean -y
+
+rc=$?
+
+echo "===== $(date '+%Y-%m-%d %H:%M:%S %Z') END patch-system exit_code=${rc} ====="
+
+exit "$rc"
 ```
 
 ### Installation
@@ -110,6 +123,24 @@ apt autoclean -y
    15 3 * * 5 /usr/local/bin/patch-system.sh >> /var/log/patch-system.log 2>&1
    ```
 
+5. Add to logrotate:
+
+   ```bash
+   sudo nano /etc/logrotate.d/patch-system
+   ```
+
+   Then add:
+
+   ```bash
+   /var/log/patch-system.log {
+    weekly
+    rotate 8
+    compress
+    missingok
+    notifempty
+    create 640 root adm
+   }
+   '''
 ---
 
 ## 💬 Notes
