@@ -131,7 +131,7 @@ install_file() {
     #   -s silent mode
     #   -S show errors even when silent
     #   -L follow redirects
-    curl -fsSL "$RAW_BASE/$src" -o "$tmp"
+    curl -4 -fsSL "$RAW_BASE/$src" -o "$tmp"
 
     # install sets ownership/permissions in one step and replaces the target file.
     sudo install -m "$mode" "$tmp" "$dst"
