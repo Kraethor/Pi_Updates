@@ -18,9 +18,9 @@ set -Eeuo pipefail
 #
 # Example hosts.txt:
 #   # Raspberry Pi hosts
-#   pi01
-#   pi@pi02
-#   192.168.169.103
+#   pi-01
+#   pi@pi-02
+#   192.168.0.103
 #
 # Exit codes:
 #   0 = all hosts resolved successfully
