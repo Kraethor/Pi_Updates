@@ -107,7 +107,7 @@ apt autoclean -y
    Then add:
 
    ```cron
-   15 3 * * 5 /usr/local/bin/patch-system.sh
+   15 3 * * 5 /usr/local/bin/patch-system.sh >> /var/log/patch-system.log 2>&1
    ```
 
 ---
