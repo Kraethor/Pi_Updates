@@ -133,7 +133,7 @@ curl -fsSL https://raw.githubusercontent.com/Kraethor/Pi_Updates/main/installer/
 Ensure you can connect manually:
 
 ```bash
-ssh pi01
+ssh pi-01
 ```
 
 ---
