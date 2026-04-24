@@ -1,9 +1,22 @@
 # Raspberry Pi Inventory & Patching Scripts
 
-This repository contains two lightweight Bash scripts designed for Raspberry Pi systems:
+This repository contains a collection of lightweight tools and notes for maintaining Raspberry Pi systems:
 
-- 📋 `pi-inventory.sh`: Collects and displays key system information.  
-- 🔧 `patch-system.sh`: Performs regular system patching via `apt-get`.  
+- 📋 `pi-inventory.sh`: Collects and displays key system information  
+- 🔧 `patch-system.sh`: Performs automated system patching via `apt-get`  
+    - ⚙️ Supporting configurations for patching:
+      - Cron scheduling  
+      - Log rotation  
+      - APT IPv4 workaround  
+- 🔧 Hardware notes:
+  - Raspberry Pi 4 USB boot fix (JMicron JMS578 firmware)
+
+## 📁 Repository Structure
+
+- `scripts/` — Bash scripts  
+- `cron/` — Cron job examples  
+- `logrotate/` — Log rotation configs  
+- `apt/` — APT configuration snippets
 
 ---
 
@@ -40,79 +53,29 @@ IP Addresses:
 192.168.1.100
 ```
 
-### Usage
+### Installation
 
-Save the following as `pi-inventory.sh` and make it executable:
+1. Copy the `/scripts/pi-inventory.sh` script to `/usr/local/bin/pi-inventory.sh`
 
-```bash
-#!/usr/bin/env bash
-
-echo "=== Raspberry Pi Inventory ==="
-echo "Hostname: $(hostname)"
-echo "Model: $(tr -d '\0' < /proc/device-tree/model 2>/dev/null || echo 'Unknown')"
-echo "CPU: $(lscpu | grep 'Model name' | awk -F: '{print $2}' | xargs)"
-echo "RAM: $(free -h | awk '/Mem:/ { print $2 }')"
-echo "OS: $(grep PRETTY_NAME /etc/os-release | cut -d= -f2 | tr -d '"')"
-echo "Kernel: $(uname -r)"
-echo "Architecture: $(uname -m)"
-
-echo "Storage Devices:"
-lsblk -o NAME,SIZE,TYPE,MOUNTPOINT | grep -E 'disk|part'
-
-echo "IP Addresses:"
-hostname -I
-```
-
-Make it executable:
+2. Make it executable:
 
 ```bash
-chmod +x pi-inventory.sh
+chmod +x /usr/local/bin/pi-inventory.sh
 ```
 
 ---
 
 ## 🔧 Automated Patching Script (`patch-system.sh`)
 
-This script updates the system weekly and performs common cleanup tasks.
-
-### Script Contents
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-export DEBIAN_FRONTEND=noninteractive
-
-log() {
-    echo "===== $(date '+%Y-%m-%d %H:%M:%S %Z') $* ====="
-}
-
-trap 'log "FAILED patch-system"' ERR
-
-log "START patch-system"
-
-apt-get update
-apt-get -y full-upgrade
-apt-get -y autoremove
-apt-get -y autoclean
-
-log "END patch-system SUCCESS"
-```
+This script `/scripts/patch-system.sh` updates the system weekly and performs common cleanup tasks.
 
 ---
 
 ### Installation
 
-1. Save the script:
+1. Copy the `/scripts/patch-system.sh` script to `/usr/local/bin/patch-system.sh`
 
-```bash
-sudo nano /usr/local/bin/patch-system.sh
-```
-
-2. Paste the contents and save.
-
-3. Make it executable:
+2. Make it executable:
 
 ```bash
 sudo chmod +x /usr/local/bin/patch-system.sh
