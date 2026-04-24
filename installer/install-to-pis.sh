@@ -18,9 +18,9 @@ set -Eeuo pipefail
 #   - Lines beginning with # are ignored
 #
 # Example hosts.txt:
-#   pi01
-#   pi@pi02
-#   192.168.169.101
+#   pi-01
+#   pi@pi-02
+#   192.168.0.101
 #
 # Requirements on the system running this script:
 #   - bash
