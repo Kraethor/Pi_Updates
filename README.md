@@ -140,7 +140,7 @@ exit "$rc"
     notifempty
     create 640 root adm
    }
-   '''
+   ```
 ---
 
 ## 💬 Notes
