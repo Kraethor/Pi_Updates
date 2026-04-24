@@ -8,6 +8,7 @@ This repository contains a collection of lightweight tools and notes for maintai
       - Cron scheduling  
       - Log rotation  
       - APT IPv4 workaround  
+- 🧰 `tools/install-to-pis.sh`: Installs or updates the scripts/configs on multiple Raspberry Pis over SSH
 - 🔧 Hardware notes:
   - Raspberry Pi 4 USB boot fix (JMicron JMS578 firmware)
 
@@ -17,6 +18,7 @@ This repository contains a collection of lightweight tools and notes for maintai
 - `cron/` — Cron job examples  
 - `logrotate/` — Log rotation configs  
 - `apt/` — APT configuration snippets
+- `tools/` — Helper scripts for installing or updating multiple systems
 
 ---
 
@@ -55,69 +57,82 @@ IP Addresses:
 
 ### Installation
 
-1. Copy the `/scripts/pi-inventory.sh` script to `/usr/local/bin/pi-inventory.sh`
-
-2. Make it executable:
+Install directly from GitHub:
 
 ```bash
-chmod +x /usr/local/bin/pi-inventory.sh
+sudo curl -fsSL \
+  https://raw.githubusercontent.com/Kraethor/Pi_Updates/main/scripts/pi-inventory.sh \
+  -o /usr/local/bin/pi-inventory.sh
+
+sudo chmod 755 /usr/local/bin/pi-inventory.sh
+```
+
+Run it:
+
+```bash
+pi-inventory.sh
 ```
 
 ---
 
 ## 🔧 Automated Patching Script (`patch-system.sh`)
 
-This script `/scripts/patch-system.sh` updates the system weekly and performs common cleanup tasks.
+This script `/scripts/patch-system.sh` updates the system and performs common cleanup tasks.
 
----
+It is designed to run manually or from cron.
 
 ### Installation
 
-1. Copy the `/scripts/patch-system.sh` script to `/usr/local/bin/patch-system.sh`
-
-2. Make it executable:
+Install directly from GitHub:
 
 ```bash
-sudo chmod +x /usr/local/bin/patch-system.sh
+sudo curl -fsSL \
+  https://raw.githubusercontent.com/Kraethor/Pi_Updates/main/scripts/patch-system.sh \
+  -o /usr/local/bin/patch-system.sh
+
+sudo chmod 755 /usr/local/bin/patch-system.sh
+```
+
+Test the script manually:
+
+```bash
+sudo /usr/local/bin/patch-system.sh
 ```
 
 ---
 
 ### ⏰ Schedule with Cron
 
-Add a weekly cron job (runs every Friday at 3:15 AM):
+Install the provided cron file:
 
 ```bash
-sudo crontab -e
+sudo curl -fsSL \
+  https://raw.githubusercontent.com/Kraethor/Pi_Updates/main/cron/patch-system.cron \
+  -o /etc/cron.d/patch-system
+
+sudo chmod 644 /etc/cron.d/patch-system
 ```
 
-Then add:
-
-```cron
-15 3 * * 5 /usr/local/bin/patch-system.sh >> /var/log/patch-system.log 2>&1
-```
+The included cron job runs every Friday at 03:15 AM and writes output to `/var/log/patch-system.log`.
 
 ---
 
 ### 🧾 Log Rotation
 
-Create a logrotate configuration:
+Install the provided logrotate file:
 
 ```bash
-sudo nano /etc/logrotate.d/patch-system
+sudo curl -fsSL \
+  https://raw.githubusercontent.com/Kraethor/Pi_Updates/main/logrotate/patch-system \
+  -o /etc/logrotate.d/patch-system
+
+sudo chmod 644 /etc/logrotate.d/patch-system
 ```
 
-Then add:
+Test the logrotate configuration:
 
 ```bash
-/var/log/patch-system.log {
- weekly
- rotate 8
- compress
- missingok
- notifempty
- create 640 root adm
-}
+sudo logrotate -d /etc/logrotate.d/patch-system
 ```
 
 ---
@@ -126,17 +141,60 @@ Then add:
 
 If your system has broken or incomplete IPv6 connectivity, APT may fail to download packages.
 
-To force IPv4:
+Install the optional APT IPv4 workaround:
 
 ```bash
-sudo nano /etc/apt/apt.conf.d/99force-ipv4
+sudo curl -fsSL \
+  https://raw.githubusercontent.com/Kraethor/Pi_Updates/main/apt/99force-ipv4 \
+  -o /etc/apt/apt.conf.d/99force-ipv4
+
+sudo chmod 644 /etc/apt/apt.conf.d/99force-ipv4
 ```
 
-Add:
+---
+
+## 🧰 Installing or Updating Multiple Raspberry Pis
+
+Use `tools/install-to-pis.sh` from a local clone of this repository when you want to push the scripts and configs to multiple systems over SSH.
+
+Example host file:
+
+```text
+pi01
+pi02
+pi03
+pi04
+```
+
+Run the installer:
 
 ```bash
-Acquire::ForceIPv4 "true";
+git clone https://github.com/Kraethor/Pi_Updates.git
+cd Pi_Updates
+chmod +x tools/install-to-pis.sh
+./tools/install-to-pis.sh hosts.txt
 ```
+
+By default, the installer deploys:
+
+- `/usr/local/bin/pi-inventory.sh`
+- `/usr/local/bin/patch-system.sh`
+- `/etc/cron.d/patch-system`
+- `/etc/logrotate.d/patch-system`
+
+The optional APT IPv4 workaround is not installed unless requested:
+
+```bash
+./tools/install-to-pis.sh --install-ipv4-workaround hosts.txt
+```
+
+To install files and immediately run patching on each host:
+
+```bash
+./tools/install-to-pis.sh --run-now hosts.txt
+```
+
+The installer expects SSH access and sudo rights on each target system.
 
 ---
 
@@ -146,6 +204,7 @@ Acquire::ForceIPv4 "true";
 - The patch script is safe for unattended execution via cron.  
 - Logs are written to `/var/log/patch-system.log`.  
 - The script will stop immediately on failure and log the error.  
+- `patch-system.sh` uses `apt-get full-upgrade`, which may install new packages or remove existing packages if needed to complete an upgrade.
 
 ---
 
