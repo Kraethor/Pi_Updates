@@ -1,0 +1,4 @@
+# Weekly system patching
+# Runs every Friday at 03:15 AM
+
+15 3 * * 5 /usr/local/bin/patch-system.sh >> /var/log/patch-system.log 2>&1
