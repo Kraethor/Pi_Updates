@@ -3,18 +3,49 @@ set -Eeuo pipefail
 
 # install-to-pis.sh
 #
-# Deploys Pi_Updates scripts and configs to multiple Raspberry Pis over SSH.
+# Installs or updates Pi_Updates scripts and configs on multiple Raspberry Pis over SSH.
+#
+# This script is standalone. It does not require a local clone of the full repository.
+# Each target system downloads the current files directly from GitHub using curl.
 #
 # Usage:
-#   ./install-to-pis.sh [--run-now] [--install-ipv4-workaround] hosts.txt
+#   ./install-to-pis.sh [--run-now] [--install-ipv4-workaround] [--branch BRANCH] hosts.txt
 #
-# Requirements:
-#   - SSH access to target hosts
-#   - sudo privileges on target hosts
-#   - This script must be run from the root of the Pi_Updates repo
+# Host file format:
+#   - One SSH target per line
+#   - Blank lines are ignored
+#   - Lines beginning with # are ignored
+#
+# Example hosts.txt:
+#   pi01
+#   pi@pi02
+#   192.168.169.101
+#
+# Requirements on the system running this script:
+#   - bash
+#   - ssh
+#
+# Requirements on each target system:
+#   - curl
+#   - sudo privileges
 
 RUN_NOW=false
 INSTALL_IPV4=false
+BRANCH="main"
+REPO_RAW_BASE="https://raw.githubusercontent.com/Kraethor/Pi_Updates"
+
+# Show usage information
+usage() {
+    cat << EOF
+Usage: $0 [options] hosts.txt
+
+Options:
+  --run-now                   Run patch-system.sh immediately after install
+  --install-ipv4-workaround   Install apt/99force-ipv4 on each target
+  --branch BRANCH             Git branch to install from (default: main)
+  -h, --help                  Show this help message
+EOF
+}
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -27,6 +58,18 @@ while [[ $# -gt 0 ]]; do
             INSTALL_IPV4=true
             shift
             ;;
+        --branch)
+            if [[ -z "${2:-}" ]]; then
+                echo "ERROR: --branch requires a branch name"
+                exit 1
+            fi
+            BRANCH="$2"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
         *)
             HOST_FILE="$1"
             shift
@@ -36,6 +79,7 @@ done
 
 if [[ -z "${HOST_FILE:-}" ]]; then
     echo "ERROR: No host file specified"
+    usage
     exit 1
 fi
 
@@ -44,55 +88,67 @@ if [[ ! -f "$HOST_FILE" ]]; then
     exit 1
 fi
 
-# Verify required files exist locally
-REQUIRED_FILES=(
-    "scripts/pi-inventory.sh"
-    "scripts/patch-system.sh"
-    "cron/patch-system.cron"
-    "logrotate/patch-system"
-)
-
-for file in "${REQUIRED_FILES[@]}"; do
-    if [[ ! -f "$file" ]]; then
-        echo "ERROR: Missing required file: $file"
-        exit 1
-    fi
-done
+RAW_BASE="${REPO_RAW_BASE}/${BRANCH}"
 
 # Deploy to each host
-while read -r host; do
+while IFS= read -r host || [[ -n "$host" ]]; do
+    # Ignore blank lines and comments in the host file
     [[ -z "$host" ]] && continue
+    [[ "$host" =~ ^[[:space:]]*# ]] && continue
 
-    echo "===== Deploying to $host ====="
+    echo "===== Deploying Pi_Updates to $host from branch $BRANCH ====="
 
-    scp scripts/pi-inventory.sh "$host:/tmp/pi-inventory.sh"
-    scp scripts/patch-system.sh "$host:/tmp/patch-system.sh"
-    scp cron/patch-system.cron "$host:/tmp/patch-system.cron"
-    scp logrotate/patch-system "$host:/tmp/logrotate-patch-system"
-
-    if $INSTALL_IPV4; then
-        scp apt/99force-ipv4 "$host:/tmp/99force-ipv4"
-    fi
-
-    ssh "$host" bash << 'EOF'
+    ssh "$host" \
+        "RAW_BASE='$RAW_BASE' INSTALL_IPV4='$INSTALL_IPV4' RUN_NOW='$RUN_NOW' bash -s" << 'EOF'
 set -Eeuo pipefail
 
-sudo install -m 755 /tmp/pi-inventory.sh /usr/local/bin/pi-inventory.sh
-sudo install -m 755 /tmp/patch-system.sh /usr/local/bin/patch-system.sh
-sudo install -m 644 /tmp/patch-system.cron /etc/cron.d/patch-system
-sudo install -m 644 /tmp/logrotate-patch-system /etc/logrotate.d/patch-system
+# Download a file from GitHub and install it with the requested mode.
+install_from_github() {
+    local source_path="$1"
+    local destination_path="$2"
+    local mode="$3"
+    local tmp_file
 
-if [[ -f /tmp/99force-ipv4 ]]; then
-    sudo install -m 644 /tmp/99force-ipv4 /etc/apt/apt.conf.d/99force-ipv4
+    tmp_file="$(mktemp)"
+
+    curl -fsSL "${RAW_BASE}/${source_path}" -o "$tmp_file"
+    sudo install -m "$mode" "$tmp_file" "$destination_path"
+    rm -f "$tmp_file"
+}
+
+# Verify required commands exist on the target before changing the system.
+command -v curl >/dev/null 2>&1 || { echo "ERROR: curl is required on target system"; exit 1; }
+command -v sudo >/dev/null 2>&1 || { echo "ERROR: sudo is required on target system"; exit 1; }
+
+# Install scripts
+install_from_github "scripts/pi-inventory.sh" "/usr/local/bin/pi-inventory.sh" "755"
+install_from_github "scripts/patch-system.sh" "/usr/local/bin/patch-system.sh" "755"
+
+# Install supporting configs
+install_from_github "cron/patch-system.cron" "/etc/cron.d/patch-system" "644"
+install_from_github "logrotate/patch-system" "/etc/logrotate.d/patch-system" "644"
+
+# Install optional APT IPv4 workaround only when requested.
+if [[ "$INSTALL_IPV4" == "true" ]]; then
+    install_from_github "apt/99force-ipv4" "/etc/apt/apt.conf.d/99force-ipv4" "644"
 fi
 
-rm -f /tmp/pi-inventory.sh /tmp/patch-system.sh /tmp/patch-system.cron /tmp/logrotate-patch-system /tmp/99force-ipv4
-EOF
+# Validate script syntax after installation.
+bash -n /usr/local/bin/pi-inventory.sh
+bash -n /usr/local/bin/patch-system.sh
 
-    if $RUN_NOW; then
-        echo "Running patch-system.sh on $host"
-        ssh "$host" "sudo /usr/local/bin/patch-system.sh"
-    fi
+# Validate logrotate configuration if logrotate is installed.
+if command -v logrotate >/dev/null 2>&1; then
+    sudo logrotate -d /etc/logrotate.d/patch-system >/dev/null
+else
+    echo "WARNING: logrotate not found; skipping logrotate validation"
+fi
+
+# Run the patching script immediately only when requested.
+if [[ "$RUN_NOW" == "true" ]]; then
+    sudo /usr/local/bin/patch-system.sh
+fi
+EOF
 
     echo "===== Completed $host ====="
 done < "$HOST_FILE"
