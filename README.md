@@ -1,4 +1,4 @@
-# Raspberry Pi Maintenance Toolkit
+# Linux Maintenance Toolkit
 
 Lightweight tools for maintaining Raspberry Pi systems.
 
