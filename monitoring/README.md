@@ -447,7 +447,7 @@ grep system-health /var/log/syslog
 ```text
 2026-05-01 09:12:01 | [SER9] ALERT: HIGH CPU LOAD
 Load: 17.75 / 16 cores (111%)
-CPU Usage: 27.6%
+CPU Usage: 87.6%
 
 Top Processes:
 PID     COMMAND             CPU%
