@@ -8,3 +8,4 @@ Lightweight tools for maintaining Raspberry Pi systems.
 - [Patching](patching/README.md) — automated apt patching and maintenance
 - [Installer](installer/README.md) — deploy to multiple Pis over SSH
 - [Firmware](firmware/README.md) — hardware-specific fixes and firmware
+- [Monitoring](monitoring/README.md) - performance monitoring and alerting
