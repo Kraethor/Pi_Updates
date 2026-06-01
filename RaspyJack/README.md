@@ -13,7 +13,6 @@ The default out-of-tree `8812au` driver does not support monitor mode on kernel 
 - Waveshare Ethernet/USB HUB HAT
 - SR01 USB GPS Module
 - Alfa AWUS036ACH (RTL8812AU chipset)
-- TP-Link TL-WN722N v1 (AR9271 chipset) — 2.4GHz only, no driver setup needed
 
 ## OS / Kernel
 
@@ -112,5 +111,4 @@ sudo rm -rf /usr/src/rtl8812au-<version>
 
 - The `rtw_8812au` module is part of the `rtw88` driver family, which is the modern in-kernel replacement for the old out-of-tree Realtek drivers.
 - As of kernel 6.14+, the RTL8812AU is fully supported in-kernel with no extra steps needed. If/when the Pi Foundation ships a 6.14 kernel for Trixie, this setup can be removed and the adapter will work plug and play.
-- The AR9271 (TP-Link TL-WN722N v1) requires no driver setup and works out of the box, but is limited to 2.4GHz only.
 - The AWUS036ACH supports both 2.4GHz and 5GHz, making it the better choice for wardriving with WDGWars.
