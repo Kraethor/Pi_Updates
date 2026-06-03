@@ -1,0 +1,6 @@
+USB 3.0 won't boot
+
+Add the following to the front of /boot/firmware/cmdline.txt
+usb-storage.quirks=152d:0578:u
+
+From <https://forums.raspberrypi.com/viewtopic.php?t=332353> 
