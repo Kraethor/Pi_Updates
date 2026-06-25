@@ -41,6 +41,7 @@ Runs every Friday at 03:15 and logs to `/var/log/patch-system.log`.
 ## Log Rotation
 
 ```bash
+sudo apt install logrotate
 sudo curl -4 -fsSL https://raw.githubusercontent.com/Kraethor/Pi_Updates/main/patching/logrotate/patch-system -o /etc/logrotate.d/patch-system
 sudo chmod 644 /etc/logrotate.d/patch-system
 ```
