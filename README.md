@@ -8,4 +8,6 @@ Lightweight tools for maintaining linux systems.
 - [Patching](patching/README.md) — automated apt patching and maintenance
 - [Installer](installer/README.md) — deploy to multiple Pis over SSH
 - [Firmware](firmware/README.md) — hardware-specific fixes and firmware
-- [Monitoring](monitoring/README.md) - performance monitoring and alerting
+- [Monitoring](monitoring/README.md) — performance monitoring and alerting
+- [RaspyJack](RaspyJack/README.md) — AWUS036ACH monitor-mode driver setup on Pi Zero 2W
+- [Ubuntu DNS Fix](ubuntu-dns-fix/README.md) — use DHCP-supplied DNS instead of systemd-resolved
