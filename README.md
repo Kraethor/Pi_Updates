@@ -1,6 +1,6 @@
 # Linux Maintenance Toolkit
 
-Lightweight tools for maintaining linux systems.
+Lightweight tools for maintaining linux systems, mostly for Raspberry Pis.
 
 ## Components
 
